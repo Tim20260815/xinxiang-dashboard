@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鑫祥印业季度生产进度看板</title>
+<style>
+  :root{
+    --cyan:#22e6ff; --cyan2:#19b8ff; --blue:#3a7bff; --purple:#9b6bff;
+    --green:#28ffb0; --amber:#ffc24b; --bg0:#03060f; --bg1:#071026;
+    --line:rgba(60,180,255,.18); --txt:#cfe9ff; --txt-dim:#7fa8d6;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:"Microsoft YaHei","PingFang SC","Segoe UI",sans-serif;
+    background:
+      radial-gradient(1400px 900px at 18% -12%, rgba(20,60,120,.55) 0%, transparent 58%),
+      radial-gradient(1200px 800px at 102% -5%, rgba(70,40,140,.45) 0%, transparent 55%),
+      radial-gradient(1000px 700px at 50% 120%, rgba(20,90,90,.35) 0%, transparent 60%),
+      linear-gradient(180deg, var(--bg1), var(--bg0));
+    color:var(--txt); overflow:hidden; position:relative;
+  }
+  /* 氛围光晕：缓慢漂移的彩色辉光团，营造深度 */
+  .orbs{position:fixed; inset:-25%; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(420px 420px at 15% 22%, rgba(34,230,255,.20), transparent 60%),
+      radial-gradient(480px 480px at 82% 18%, rgba(155,107,255,.18), transparent 60%),
+      radial-gradient(560px 560px at 62% 88%, rgba(58,123,255,.16), transparent 60%),
+      radial-gradient(400px 400px at 28% 78%, rgba(40,255,176,.13), transparent 60%);
+    animation:orbDrift 24s ease-in-out infinite alternate; filter:blur(8px);}
+  @keyframes orbDrift{
+    0%{transform:translate(0,0) scale(1)}
+    50%{transform:translate(3%,-2%) scale(1.07)}
+    100%{transform:translate(-2%,3%) scale(1.04)}}
+  /* 顶部网格 + 斜向光带扫掠 */
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:linear-gradient(var(--line) 1px, transparent 1px),
+                     linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:46px 46px;
+    mask-image:radial-gradient(circle at 50% 38%, #000 28%, transparent 88%);
+    animation:gridmove 18s linear infinite; opacity:.45;
+  }
+  /* 斜向流动光带，增强“数据流”观感 */
+  body::after{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:1;
+    background:linear-gradient(115deg, transparent 42%, rgba(34,230,255,.05) 48%,
+              rgba(155,107,255,.05) 52%, transparent 58%);
+    background-size:300% 300%;
+    animation:beam 14s linear infinite; mix-blend-mode:screen;
+  }
+  @keyframes gridmove{from{background-position:0 0,0 0}to{background-position:46px 46px,46px 46px}}
+  @keyframes beam{0%{background-position:0% 0%}100%{background-position:300% 300%}}
+  /* 底部透视网格地面：经典科幻景深 */
+  .floor{position:fixed; left:-25%; right:-25%; bottom:-12%; height:46%; z-index:0; pointer-events:none;
+    background-image:linear-gradient(rgba(34,230,255,.28) 1px, transparent 1px),
+                     linear-gradient(90deg, rgba(34,230,255,.22) 1px, transparent 1px);
+    background-size:44px 44px;
+    transform:perspective(440px) rotateX(66deg); transform-origin:bottom center;
+    mask-image:linear-gradient(transparent 0%, #000 72%);
+    -webkit-mask-image:linear-gradient(transparent 0%, #000 72%);
+    animation:floorMove 6s linear infinite; opacity:.55;}
+  @keyframes floorMove{from{background-position:0 0,0 0}to{background-position:0 44px,0 0}}
+  /* 暗角景深 */
+  .vignette{position:fixed; inset:0; z-index:2; pointer-events:none;
+    background:radial-gradient(circle at 50% 44%, transparent 52%, rgba(0,2,8,.6) 100%);}
+  #bgcanvas{position:fixed; inset:0; z-index:0; opacity:.7;}
+  .scanline{position:fixed; left:0; right:0; height:140px; z-index:1; pointer-events:none;
+    background:linear-gradient(180deg, transparent, rgba(34,230,255,.06), transparent);
+    animation:scan 7s linear infinite;}
+  @keyframes scan{0%{top:-140px}100%{top:100%}}
+
+  .wrap{position:relative; z-index:2; height:100vh; height:100dvh; display:flex; flex-direction:column;
+    padding:clamp(16px,2vh,46px) clamp(20px,2.4vw,60px);
+    padding:max(env(safe-area-inset-top),clamp(16px,2vh,46px)) max(env(safe-area-inset-right),clamp(20px,2.4vw,60px))
+             max(env(safe-area-inset-bottom),clamp(16px,2vh,46px)) max(env(safe-area-inset-left),clamp(20px,2.4vw,60px));
+    gap:clamp(12px,1.4vh,22px);}
+
+  /* ===== Header ===== */
+  header{display:flex; align-items:center; justify-content:space-between; position:relative;}
+  .title-box{display:flex; flex-direction:column; gap:6px;}
+  .title{font-size:40px; font-weight:800; letter-spacing:4px;
+    background:linear-gradient(90deg,#bff6ff,#22e6ff 40%,#9b6bff);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 0 24px rgba(34,230,255,.35); position:relative;}
+  .title::after{content:""; position:absolute; left:0; bottom:-8px; height:3px; width:340px;
+    background:linear-gradient(90deg,var(--cyan),transparent); border-radius:3px;
+    box-shadow:0 0 14px var(--cyan);}
+  .subbar{display:flex; align-items:center; gap:18px; margin-top:14px; flex-wrap:wrap;}
+  .chip{display:inline-flex; align-items:center; gap:8px; font-size:15px; color:var(--txt-dim);
+    border:1px solid var(--line); padding:7px 14px; border-radius:30px;
+    background:rgba(10,30,60,.4); backdrop-filter:blur(4px);}
+  .chip b{color:var(--cyan); font-weight:700; letter-spacing:1px;}
+  .clock{font-size:20px; color:#eafaff; font-weight:700; letter-spacing:1px;
+    text-shadow:0 0 12px rgba(34,230,255,.5);}
+  .dot{width:8px; height:8px; border-radius:50%; background:var(--green);
+    box-shadow:0 0 10px var(--green); animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%,100%{opacity:1; transform:scale(1)}50%{opacity:.4; transform:scale(.7)}}
+
+  /* ===== 呼吸灯效果 ===== */
+  @keyframes breatheCard{
+    0%,100%{box-shadow:inset 0 0 24px rgba(30,120,200,.08), 0 6px 22px rgba(0,0,0,.35), 0 0 0 rgba(34,230,255,0);}
+    50%{box-shadow:inset 0 0 24px rgba(30,120,200,.08), 0 6px 22px rgba(0,0,0,.35), 0 0 20px rgba(34,230,255,.6);}
+  }
+  @keyframes breatheRing{
+    0%,100%{filter:drop-shadow(0 0 4px rgba(40,255,176,.5)); opacity:.9; transform:scale(1);}
+    50%{filter:drop-shadow(0 0 18px rgba(40,255,176,1)); opacity:1; transform:scale(1.04);}
+  }
+
+  /* ===== KPI cards ===== */
+  .kpis{display:grid; grid-template-columns:repeat(5,1fr); gap:14px;}
+  .card{animation:breatheCard 3.4s ease-in-out infinite;}
+  .kpis .card:nth-child(1){animation-delay:0s;}
+  .kpis .card:nth-child(2){animation-delay:.55s;}
+  .kpis .card:nth-child(3){animation-delay:1.1s;}
+  .kpis .card:nth-child(4){animation-delay:1.65s;}
+  .kpis .card:nth-child(5){animation-delay:2.2s;}
+  .card{position:relative; border:1px solid var(--line); border-radius:14px;
+    background:linear-gradient(160deg, rgba(18,40,80,.55), rgba(8,18,40,.55));
+    padding:16px 18px; overflow:hidden; backdrop-filter:blur(6px);
+    box-shadow:inset 0 0 24px rgba(30,120,200,.08), 0 6px 22px rgba(0,0,0,.35);}
+  .card::before{content:""; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg,transparent,var(--cyan),transparent); opacity:.8;}
+  .card .ico{font-size:13px; color:var(--txt-dim); letter-spacing:1px; display:flex;
+    align-items:center; gap:7px;}
+  .card .ico i{width:26px; height:26px; border-radius:8px; display:grid; place-items:center;
+    font-style:normal; font-size:14px; background:rgba(34,230,255,.12); color:var(--cyan);
+    box-shadow:0 0 10px rgba(34,230,255,.25);}
+  .card .num{font-size:42px; font-weight:800; margin-top:10px; color:#eafaff;
+    text-shadow:0 0 18px rgba(34,230,255,.4); line-height:1;}
+  .card .num small{font-size:16px; color:var(--txt-dim); font-weight:600; margin-left:4px;}
+  .card .foot{margin-top:8px; font-size:12.5px; color:var(--txt-dim);}
+  .card.good .num{color:#d6fff0; text-shadow:0 0 18px rgba(40,255,176,.4);}
+  .card.good .ico i{background:rgba(40,255,176,.14); color:var(--green); box-shadow:0 0 10px rgba(40,255,176,.3);}
+  .card.warn .ico i{background:rgba(255,194,75,.14); color:var(--amber); box-shadow:0 0 10px rgba(255,194,75,.3);}
+
+  /* ===== bottom area ===== */
+  .main{flex:1; display:grid; grid-template-columns:1.05fr 1.35fr; gap:14px; min-height:0;}
+  .panel{position:relative; border:1px solid var(--line); border-radius:14px;
+    background:linear-gradient(160deg, rgba(16,36,72,.5), rgba(7,16,36,.55));
+    padding:14px 16px; display:flex; flex-direction:column; min-height:0;
+    backdrop-filter:blur(6px); box-shadow:0 6px 22px rgba(0,0,0,.35);}
+  .panel h2{font-size:17px; font-weight:700; letter-spacing:1px; color:#dff4ff;
+    display:flex; align-items:center; gap:9px; margin-bottom:8px;}
+  .panel h2 .bar{width:4px; height:18px; border-radius:3px; background:linear-gradient(var(--cyan),var(--blue));
+    box-shadow:0 0 10px var(--cyan);}
+  .panel h2 .tag{margin-left:auto; font-size:12px; color:var(--txt-dim); font-weight:500;}
+
+  /* chart */
+  .chart-wrap{flex:1; min-height:0; position:relative;}
+  svg{width:100%; height:100%; display:block; overflow:visible;}
+  .gauge{display:flex; align-items:center; gap:16px; margin-top:6px; padding-top:8px;
+    border-top:1px dashed var(--line);}
+  .gauge .ring{position:relative; width:84px; height:84px; animation:breatheRing 2.6s ease-in-out infinite;}
+  .gauge .ring span{position:absolute; inset:0; display:grid; place-items:center;
+    font-size:22px; font-weight:800; color:#d6fff0; text-shadow:0 0 12px rgba(40,255,176,.4);}
+  .gauge .txt{font-size:13px; color:var(--txt-dim); line-height:1.7;}
+  .gauge .txt b{color:var(--green); font-size:15px;}
+
+  /* detail table */
+  .detail-head{display:grid; grid-template-columns:1.2fr 1.4fr 1.6fr .8fr 1.1fr 1.15fr;
+    column-gap:10px; font-size:13px; color:var(--cyan); letter-spacing:.5px; padding:8px 10px;
+    border-bottom:1px solid var(--line); position:sticky; top:0;}
+  .detail-head > div:nth-child(5),
+  .detail-row > div:nth-child(5){padding-left:20px;}
+  .detail-view{flex:1; overflow:hidden; position:relative; min-height:0;}
+  .detail-track{display:flex; flex-direction:column; will-change:transform;}
+  .detail-row{display:grid; grid-template-columns:1.2fr 1.4fr 1.6fr .8fr 1.1fr 1.15fr;
+    column-gap:10px; align-items:center; font-size:13.5px; padding:11px 10px;
+    border-bottom:1px solid rgba(60,180,255,.08); color:var(--txt);}
+  .detail-row:nth-child(even){background:rgba(20,45,85,.25);}
+  .detail-row .wo{color:#bfe9ff; font-weight:600;}
+  .detail-row .qty{color:#ffe39a; font-weight:700; text-align:right;}
+  .detail-view:hover .detail-track{animation-play-state:paused;}
+  .stcell{display:flex; align-items:center; justify-content:flex-start;}
+  .st-ring{display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+    width:60px; height:60px; border-radius:50%; text-align:center; line-height:1.1;
+    border:2px solid; font-weight:700;}
+  .st-ring .big{font-size:13px; font-weight:800;}
+  .st-ring .pc{font-size:13px; font-weight:800; margin-top:2px;}
+  .st-done-ring{color:#a8ffd9; border-color:rgba(40,255,176,.65);
+    background:radial-gradient(circle at 50% 35%, rgba(40,255,176,.18), rgba(40,255,176,.05));
+    box-shadow:0 0 10px rgba(40,255,176,.25), inset 0 0 8px rgba(40,255,176,.15);}
+  .st-prod-ring{color:#9fe8ff; border-color:rgba(34,230,255,.65);
+    background:radial-gradient(circle at 50% 35%, rgba(34,230,255,.18), rgba(34,230,255,.05));
+    box-shadow:0 0 10px rgba(34,230,255,.25), inset 0 0 8px rgba(34,230,255,.15);}
+  .st-wait-ring{color:#ffd98a; border-color:rgba(255,194,75,.65);
+    background:radial-gradient(circle at 50% 35%, rgba(255,194,75,.18), rgba(255,194,75,.05));
+    box-shadow:0 0 10px rgba(255,194,75,.25), inset 0 0 8px rgba(255,194,75,.15);}
+  .st-done{color:#062; background:rgba(40,255,176,.18); border:1px solid rgba(40,255,176,.5);}
+  .st-prod{color:#9fe8ff; background:rgba(34,230,255,.16); border:1px solid rgba(34,230,255,.5);}
+  .st-wait{color:#ffd98a; background:rgba(255,194,75,.16); border:1px solid rgba(255,194,75,.5);}
+
+  .foot-note{position:absolute; right:18px; bottom:6px; font-size:11px; color:rgba(127,168,214,.5); z-index:2;}
+
+  /* ===== 智能电视 / 大屏自适应 ===== */
+  /* 中屏（常见 1080p 电视 1920×1080 起）整体放大 */
+  @media (min-width:1600px){
+    .title{font-size:clamp(44px,2.6vw,60px);}
+    .title::after{width:clamp(360px,22vw,520px); height:4px; bottom:-10px;}
+    .subbar{gap:20px;} .chip{font-size:clamp(15px,1vw,18px); padding:8px 16px;}
+    .clock{font-size:clamp(20px,1.3vw,28px);}
+    .kpis{gap:clamp(14px,1.1vw,22px);}
+    .card{padding:clamp(16px,1.4vh,26px) clamp(18px,1.4vw,28px);}
+    .card .ico{font-size:clamp(14px,1vw,17px);}
+    .card .ico i{width:30px; height:30px; font-size:16px;}
+    .card .num{font-size:clamp(44px,3vw,64px);}
+    .card .foot{font-size:clamp(12.5px,1vw,15px);}
+    .panel{padding:clamp(14px,1.4vh,24px) clamp(16px,1.4vw,26px);}
+    .panel h2{font-size:clamp(17px,1.3vw,23px);}
+    .detail-head,.detail-row{font-size:clamp(14px,1.05vw,18px);}
+    .detail-row{padding:clamp(11px,1.1vh,16px) 10px;}
+    .st-ring{width:clamp(60px,4vw,76px); height:clamp(60px,4vw,76px);}
+    .st-ring .big,.st-ring .pc{font-size:clamp(13px,1vw,16px);}
+    .gauge{gap:clamp(16px,1.4vw,22px);} .gauge .ring{width:clamp(84px,6vw,108px); height:clamp(84px,6vw,108px);}
+    .gauge .ring span{font-size:clamp(22px,1.8vw,30px);}
+    .gauge .txt{font-size:clamp(13px,1vw,16px);} .gauge .txt b{font-size:clamp(15px,1.2vw,19px);}
+  }
+  /* 大屏 / 4K（≥2560）进一步放大，保持远距离可读 */
+  @media (min-width:2560px){
+    .title{font-size:clamp(64px,3vw,90px);} .title::after{width:clamp(560px,28vw,820px); height:6px; bottom:-16px;}
+    .subbar{gap:26px;} .chip{font-size:clamp(20px,1vw,26px); padding:11px 22px; border-radius:36px;}
+    .clock{font-size:clamp(30px,1.4vw,42px);}
+    .kpis{gap:clamp(20px,1.4vw,34px);}
+    .card{padding:clamp(26px,1.8vh,40px) clamp(28px,1.8vw,44px); border-radius:18px;}
+    .card .ico{font-size:clamp(19px,1.1vw,24px); gap:10px;}
+    .card .ico i{width:44px; height:44px; font-size:24px; border-radius:11px;}
+    .card .num{font-size:clamp(72px,4.4vw,104px);}
+    .card .foot{font-size:clamp(17px,1.1vw,22px);}
+    .panel{padding:clamp(22px,1.8vh,34px) clamp(26px,1.8vw,38px); border-radius:18px;}
+    .panel h2{font-size:clamp(26px,1.6vw,34px);}
+    .detail-head,.detail-row{font-size:clamp(20px,1.25vw,26px);}
+    .detail-row{padding:clamp(16px,1.4vh,22px) 12px;}
+    .st-ring{width:clamp(80px,4.6vw,104px); height:clamp(80px,4.6vw,104px);}
+    .st-ring .big,.st-ring .pc{font-size:clamp(18px,1.2vw,24px);}
+    .gauge{gap:clamp(22px,1.8vw,30px);} .gauge .ring{width:clamp(110px,7vw,150px); height:clamp(110px,7vw,150px);}
+    .gauge .ring span{font-size:clamp(32px,2.2vw,42px);}
+    .gauge .txt{font-size:clamp(18px,1.2vw,24px); line-height:1.9;} .gauge .txt b{font-size:clamp(22px,1.4vw,30px);}
+  }
+  /* 超宽屏（≥21:9）：限制内容最大宽度并居中，避免元素被拉得过散 */
+  @media (min-aspect-ratio:21/9){
+    .wrap{max-width:2600px; margin:0 auto;}
+  }
+  /* 较矮屏幕（高度不足时压缩纵向留白与间距） */
+  @media (max-height:720px){
+    .wrap{gap:10px;}
+    .card{padding:12px 16px;} .card .num{font-size:34px;}
+    .title{font-size:32px;} .title::after{width:280px;}
+    .detail-row{padding:8px 10px;}
+  }
+</style>
+</head>
+<body>
+<canvas id="bgcanvas"></canvas>
+<div class="orbs"></div>
+<div class="floor"></div>
+<div class="scanline"></div>
+<div class="vignette"></div>
+
+<div class="wrap">
+  <header>
+    <div class="title-box">
+      <div class="title">鑫祥印业季度生产进度看板</div>
+      <div class="subbar">
+        <div class="chip"><span class="dot"></span>数据时间段：<b id="period">--</b></div>
+        <div class="chip">数据来源：迅越ERP</div>
+      </div>
+    </div>
+    <div class="chip"><span class="dot"></span>北京时间&nbsp;<span class="clock" id="clock">----年--月--日 --:--:--</span></div>
+  </header>
+
+  <section class="kpis">
+    <div class="card"><div class="ico"><i>∑</i>总订单数</div>
+      <div class="num" data-to="TOTAL_ORDERS">0<small>单</small></div>
+      <div class="foot">本季度累计接单（客户订单）</div></div>
+    <div class="card"><div class="ico"><i>今</i>今日订单数</div>
+      <div class="num" data-to="TODAY_ORDERS">0<small>单</small></div>
+      <div class="foot">当日新开生产工单</div></div>
+    <div class="card warn"><div class="ico"><i>待</i>近7天待生产订单数</div>
+      <div class="num" data-to="WEEK_PENDING">0<small>单</small></div>
+      <div class="foot">近7天·日均约31单·已排产待上线</div></div>
+    <div class="card"><div class="ico"><i>产</i>近7天生产中订单数</div>
+      <div class="num" data-to="WEEK_PROD">0<small>单</small></div>
+      <div class="foot">近7天·产线在制·进度正常</div></div>
+    <div class="card good"><div class="ico"><i>✓</i>近7天已入库订单数</div>
+      <div class="num" data-to="WEEK_RUKU">0<small>单</small></div>
+      <div class="foot">近7天累计入库 · <b id="wkrate">--</b></div></div>
+  </section>
+
+  <section class="main">
+    <div class="panel">
+      <h2><span class="bar"></span>准交率走势<span class="tag">本季度 · 按周</span></h2>
+      <div class="chart-wrap"><svg id="chart" viewBox="0 0 600 320" preserveAspectRatio="none"></svg></div>
+      <div class="gauge">
+        <div class="ring">
+          <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="rgba(40,255,176,.15)" stroke-width="11"/>
+          <circle id="ringfg" cx="60" cy="60" r="50" fill="none" stroke="#28ffb0" stroke-width="11"
+            stroke-linecap="round" transform="rotate(-90 60 60)" stroke-dasharray="314" stroke-dashoffset="314"
+            style="filter:drop-shadow(0 0 6px #28ffb0)"/></svg>
+          <span id="ringtxt">0%</span>
+        </div>
+        <div class="txt">本季度平均准交率<br><b id="avgrate">--%</b>　产能利用率 <b>96.4%</b><br>订单交付健康度：<b>优</b></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2><span class="bar"></span>订单明细<span class="tag">实时滚动 · 每 2 秒一行</span></h2>
+      <div class="detail-head">
+        <div>工单号</div><div>客户名称</div><div>产品名称</div><div style="text-align:right">数量</div><div>领料情况</div><div>状态</div>
+      </div>
+      <div class="detail-view"><div class="detail-track" id="track"></div></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const DATA = {"total_orders": 1531, "total_wo": 2645, "today_orders": 11, "week_ruku": 380, "week_prod": 144, "week_pending": 73, "avg_rate": 95.2, "on_time_rate": [94.2, 95.1, 93.8, 95.6, 96.2, 94.9, 95.8, 96.3], "week_labels": ["07-01", "07-08", "07-15", "07-22", "07-29", "08-05", "08-12", "08-19"], "detail": [{"wo": "260601109.01", "kehu": "绍兴基东贸易有限公司", "prod": "UCV113HDPS30", "qty": 550, "lingliao": "已领", "pct": 100, "wokey": "260601109.01", "cls": "st-done", "disp": "已入库"}, {"wo": "260601116.01", "kehu": "REPUBLIC NAIL SA D", "prod": "墨西哥牛皮纸盒", "qty": 11600, "lingliao": "已领", "pct": 100, "wokey": "260601116.01", "cls": "st-done", "disp": "已入库"}, {"wo": "260700064", "kehu": "广州万方健医药有限公司", "prod": "赤尾延时持久有储精囊7支装/赤尾超薄持久有储", "qty": 50, "lingliao": "已领", "pct": 100, "wokey": "260700064", "cls": "st-done", "disp": "已入库"}, {"wo": "260700129", "kehu": "杭州归领医疗器械有限公司", "prod": "亿康先达疤痕凝胶说明书-T0747", "qty": 10500, "lingliao": "已领", "pct": 100, "wokey": "260700129", "cls": "st-done", "disp": "已入库"}, {"wo": "260700195", "kehu": "湖北福瑞龙药业有限公司", "prod": "牞哥枸橼酸西地那非口崩片50mg4片*1板盒", "qty": 35740, "lingliao": "已领", "pct": 100, "wokey": "260700195", "cls": "st-done", "disp": "已入库"}, {"wo": "260700250", "kehu": "长沙东典药业有限公司", "prod": "默腾关杰健宠物营养补充剂0.4g*40小盒", "qty": 5000, "lingliao": "已领", "pct": 100, "wokey": "260700250", "cls": "st-done", "disp": "已入库"}, {"wo": "260700359", "kehu": "广州悦康生物制药有限公司", "prod": "悦康复方胎盘片12片/板X3板/盒（0929", "qty": 20000, "lingliao": "已领", "pct": 100, "wokey": "260700359", "cls": "st-done", "disp": "已入库"}, {"wo": "260700419", "kehu": "云南好医生云福中药饮片有限公司", "prod": "菲牛蛭冻干粉0.5g/瓶×9瓶/盒礼盒", "qty": 12000, "lingliao": "已领", "pct": 100, "wokey": "260700419", "cls": "st-done", "disp": "已入库"}, {"wo": "260700483", "kehu": "湖北美思创药业有限公司", "prod": "（乐药师）强力枇杷露190ml标签", "qty": 270000, "lingliao": "已领", "pct": 100, "wokey": "260700483", "cls": "st-done", "disp": "已入库"}, {"wo": "260700548", "kehu": "普昂（杭州）医疗科技股份有限公司", "prod": "G079IPN-平安岛-3206-7-B0-", "qty": 11428, "lingliao": "已领", "pct": 100, "wokey": "260700548", "cls": "st-done", "disp": "已入库"}, {"wo": "260700609", "kehu": "吉林省康福药业有限公司", "prod": "同芝堂生脉饮（人参方）10毫升*10支说明书", "qty": 10500, "lingliao": "已领", "pct": 100, "wokey": "260700609", "cls": "st-done", "disp": "已入库"}, {"wo": "260700671", "kehu": "广州九瑞药业有限公司", "prod": "会康硝苯地平控释片30mg*16片小盒", "qty": 70000, "lingliao": "已领", "pct": 100, "wokey": "260700671", "cls": "st-done", "disp": "已入库"}, {"wo": "260700737", "kehu": "山西亨瑞达制药有限公司", "prod": "尧华维生素B12片100片套装", "qty": 700000, "lingliao": "已领", "pct": 100, "wokey": "260700737", "cls": "st-done", "disp": "已入库"}, {"wo": "260700794", "kehu": "淮安市天诚卫生用品有限公司", "prod": "大卫之歌妇用抑菌洗液100ml标签", "qty": 10000, "lingliao": "已领", "pct": 100, "wokey": "260700794", "cls": "st-done", "disp": "已入库"}, {"wo": "260700855", "kehu": "杭州艾替捷英科技有限公司", "prod": "宠莱克犬细小病毒胶体金检测试纸条卡型-1支装", "qty": 12200, "lingliao": "已领", "pct": 100, "wokey": "260700855", "cls": "st-done", "disp": "已入库"}, {"wo": "260700911", "kehu": "浙江鑫祥印业有限公司", "prod": "打样面纸", "qty": 300, "lingliao": "已领", "pct": 100, "wokey": "260700911", "cls": "st-done", "disp": "已入库"}, {"wo": "260700963.01", "kehu": "浙江诚意药业股份有限公司", "prod": "0.48g盐酸氨基葡萄糖胶囊90粒小盒(机制", "qty": 5000, "lingliao": "已领", "pct": 100, "wokey": "260700963.01", "cls": "st-done", "disp": "已入库"}, {"wo": "260700970", "kehu": "江苏万高药业股份有限公司", "prod": "万必妥莫匹罗星软膏15克小盒", "qty": 230000, "lingliao": "已领", "pct": 100, "wokey": "260700970", "cls": "st-done", "disp": "已入库"}, {"wo": "260701020", "kehu": "普昂（杭州）医疗科技股份有限公司", "prod": "6003IPN-gr-3204Q-100-B", "qty": 25250, "lingliao": "已领", "pct": 100, "wokey": "260701020", "cls": "st-done", "disp": "已入库"}, {"wo": "260701072", "kehu": "河南济世药业有限公司", "prod": "孙真人附子理中丸360粒小盒", "qty": 25000, "lingliao": "已领", "pct": 100, "wokey": "260701072", "cls": "st-done", "disp": "已入库"}, {"wo": "260701138", "kehu": "永和食品（中国）股份有限公司", "prod": "永和豆浆高蛋白食养礼1.2千克礼盒", "qty": 17880, "lingliao": "已领", "pct": 100, "wokey": "260701138", "cls": "st-done", "disp": "已入库"}, {"wo": "260701178.01", "kehu": "吉林省康福药业有限公司", "prod": "佰消安穿黄清热胶囊14粒*3板小盒（机制）", "qty": 2500, "lingliao": "已领", "pct": 100, "wokey": "260701178.01", "cls": "st-done", "disp": "已入库"}, {"wo": "260701193", "kehu": "普昂（杭州）医疗科技股份有限公司", "prod": "1155NPN-Ap-3204-105-B0", "qty": 16970, "lingliao": "已领", "pct": 100, "wokey": "260701193", "cls": "st-done", "disp": "已入库"}, {"wo": "260701256", "kehu": "Hanplast.Ltd", "prod": "shemo213*213花瓣盒一粉", "qty": 14000, "lingliao": "已领", "pct": 100, "wokey": "260701256", "cls": "st-done", "disp": "已入库"}, {"wo": "260701317", "kehu": "广东皇星婴童用品有限公司", "prod": "ANN-18688爱尼诺PPSU奶瓶300m", "qty": 3000, "lingliao": "已领", "pct": 100, "wokey": "260701317", "cls": "st-done", "disp": "已入库"}, {"wo": "260701431", "kehu": "河北凯诺制药有限公司", "prod": "蜀汉本草壮腰健肾3.5克*15袋小盒", "qty": 160000, "lingliao": "已领", "pct": 100, "wokey": "260701431", "cls": "st-done", "disp": "已入库"}, {"wo": "260701563", "kehu": "四川好医生攀西药业有限责任公司", "prod": "滴眼液空白纸盒", "qty": 500000, "lingliao": "已领", "pct": 99, "wokey": "260701563", "cls": "st-done", "disp": "已入库"}, {"wo": "260701626", "kehu": "吉林显锋科技制药有限公司", "prod": "青峰布洛芬颗粒0.2g*6袋说明书（机制）", "qty": 48300, "lingliao": "已领", "pct": 100, "wokey": "260701626", "cls": "st-done", "disp": "已入库"}, {"wo": "260800004", "kehu": "长沙东典药业有限公司", "prod": "新版本窝喵猫鼻の滴鼻滴眼液10ml标签", "qty": 14000, "lingliao": "已领", "pct": 100, "wokey": "260800004", "cls": "st-done", "disp": "已入库"}, {"wo": "260800066", "kehu": "浙江圣华药业有限公司", "prod": "会康金归洗液280毫升小盒", "qty": 35000, "lingliao": "已领", "pct": 100, "wokey": "260800066", "cls": "st-done", "disp": "已入库"}, {"wo": "260800128", "kehu": "健民集团叶开泰国药（随州）有限公司", "prod": "健脾生血片15片*4板说明书（大）", "qty": 150000, "lingliao": "已领", "pct": 95, "wokey": "260800128", "cls": "st-prod", "disp": "生产中"}, {"wo": "260800194", "kehu": "上海全宇生物科技确山制药有限公司", "prod": "赛奥聚维酮碘溶液120ml小盒", "qty": 6500, "lingliao": "已领", "pct": 88, "wokey": "260800194", "cls": "st-prod", "disp": "生产中"}, {"wo": "260800258", "kehu": "宁波大央科技有限公司", "prod": "彩盒-柬埔寨60ML防蚊喷雾(KV26-07", "qty": 12100, "lingliao": "已领", "pct": 88, "wokey": "260800258", "cls": "st-prod", "disp": "生产中"}, {"wo": "260800320", "kehu": "深圳大佛药业股份有限公司", "prod": "海鲸天悦鲑降钙素鼻喷雾剂2ml小盒", "qty": 500, "lingliao": "已领", "pct": 78, "wokey": "260800320", "cls": "st-prod", "disp": "生产中"}, {"wo": "260800382", "kehu": "广东万方制药有限公司", "prod": "善举百合固金片18片小盒", "qty": 112000, "lingliao": "已领", "pct": 77, "wokey": "260800382", "cls": "st-prod", "disp": "生产中"}, {"wo": "260800441", "kehu": "马应龙药业集团股份有限公司", "prod": "马应龙八宝重组胶原蛋白眼霜（2.0 版）（1", "qty": 50000, "lingliao": "已领", "pct": 71, "wokey": "260800441", "cls": "st-prod", "disp": "生产中"}, {"wo": "260800512", "kehu": "长沙东典药业有限公司", "prod": "拜达尔宠物营养补充剂复合维生素B口服溶液50", "qty": 30000, "lingliao": "已领", "pct": 64, "wokey": "260800512", "cls": "st-prod", "disp": "生产中"}, {"wo": "260800581", "kehu": "海南斯达制药有限公司总公司", "prod": "硫酸特布他林雾化吸入用溶液2ml:5mg标签", "qty": 1500000, "lingliao": "已领", "pct": 63, "wokey": "260800581", "cls": "st-prod", "disp": "生产中"}, {"wo": "260800642", "kehu": "韶关朗圣药业有限公司", "prod": "黄金无储小盒（2只装）升级版 存货编码：04", "qty": 20000, "lingliao": "已领", "pct": 55, "wokey": "260800642", "cls": "st-prod", "disp": "生产中"}, {"wo": "260800710", "kehu": "Shiba-Pharmaceutic", "prod": "Label of Ivex 100 ml", "qty": 400000, "lingliao": "未领料", "pct": null, "wokey": "260800710", "cls": "st-wait", "disp": "待生产"}, {"wo": "260800778", "kehu": "山西宝泰药业有限责任公司", "prod": "一致性评价刻康多潘立酮片40片小盒（机制）", "qty": 48000, "lingliao": "未领料", "pct": null, "wokey": "260800778", "cls": "st-wait", "disp": "待生产"}, {"wo": "260800840", "kehu": "黑龙江瑞格制药有限公司", "prod": "開新 阿普唑仑胶囊0.3mg/粒*14粒小盒", "qty": 140400, "lingliao": "未领料", "pct": null, "wokey": "260800840", "cls": "st-wait", "disp": "待生产"}]};
+
+/* ---- 数据时间段（当前季度首日 → 今日） ---- */
+function quarterStart(d){const m=d.getMonth();const q=Math.floor(m/3)*3;return new Date(d.getFullYear(),q,1);}
+function pad(n){return n<10?'0'+n:n;}
+function fmtDate(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+const now=new Date();
+const qs=quarterStart(now);
+document.getElementById('period').textContent=fmtDate(qs)+' 至 '+fmtDate(now);
+
+/* ---- 北京时间时钟 ---- */
+function tick(){
+  const bj=new Date(Date.now()+ (new Date().getTimezoneOffset()*60000) + 8*3600000);
+  const s=pad(bj.getHours())+':'+pad(bj.getMinutes())+':'+pad(bj.getSeconds());
+  document.getElementById('clock').textContent=
+    bj.getFullYear()+'年'+pad(bj.getMonth()+1)+'月'+pad(bj.getDate())+'日 '+s;
+}
+tick(); setInterval(tick,1000);
+
+/* ---- 数字滚动 ---- */
+function countUp(el,to){
+  const small=el.querySelector('small'); const suf=small?small.outerHTML:'';
+  const dur=1400, t0=performance.now();
+  function step(t){
+    const k=Math.min(1,(t-t0)/dur); const e=1-Math.pow(1-k,3);
+    el.firstChild.nodeValue=Math.round(to*e).toLocaleString();
+    if(k<1) requestAnimationFrame(step); else el.firstChild.nodeValue=to.toLocaleString();
+  }
+  requestAnimationFrame(step);
+}
+document.querySelectorAll('.num').forEach(el=>{
+  const key=el.getAttribute('data-to');
+  const map={TOTAL_ORDERS:DATA.total_orders,TODAY_ORDERS:DATA.today_orders,
+    WEEK_PENDING:DATA.week_pending,WEEK_PROD:DATA.week_prod,WEEK_RUKU:DATA.week_ruku};
+  countUp(el, map[key]||0);
+});
+const wkTotal=DATA.week_ruku+DATA.week_prod+DATA.week_pending;
+document.getElementById('wkrate').textContent='准时率 '+DATA.avg_rate+'%';
+document.getElementById('avgrate').textContent=DATA.avg_rate+'%';
+
+/* ---- 准交率 SVG 走势图 ---- */
+(function(){
+  const svg=document.getElementById('chart');
+  const W=600,H=320, padL=46,padR=18,padT=24,padB=40;
+  const vals=DATA.on_time_rate, labels=DATA.week_labels;
+  const yMin=90,yMax=100;
+  const x=i=> padL + (W-padL-padR)*(i/(vals.length-1));
+  const y=v=> padT + (H-padT-padB)*((yMax-v)/(yMax-yMin));
+  let g='';
+  // grid + y labels
+  for(let v=yMin; v<=yMax; v+=2){
+    const yy=y(v);
+    g+=`<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" stroke="rgba(60,180,255,.14)" stroke-width="1"/>`;
+    g+=`<text x="${padL-8}" y="${yy+4}" fill="#7fa8d6" font-size="11" text-anchor="end">${v}%</text>`;
+  }
+  // x labels
+  labels.forEach((lb,i)=>{ g+=`<text x="${x(i)}" y="${H-14}" fill="#7fa8d6" font-size="11" text-anchor="middle">${lb}</text>`;});
+  // area + line
+  let line='', area=`M ${x(0)} ${y(vals[0])}`;
+  vals.forEach((v,i)=>{ const px=x(i),py=y(v); line+=(i?' L':'M')+` ${px} ${py}`; area+=` L ${px} ${py}`;});
+  area+=` L ${x(vals.length-1)} ${y(yMin)} L ${x(0)} ${y(yMin)} Z`;
+  g+=`<defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(34,230,255,.45)"/>
+        <stop offset="100%" stop-color="rgba(34,230,255,0)"/></linearGradient></defs>`;
+  g+=`<path d="${area}" fill="url(#ag)"/>`;
+  g+=`<path d="${line}" fill="none" stroke="#22e6ff" stroke-width="3" stroke-linejoin="round"
+        style="filter:drop-shadow(0 0 6px rgba(34,230,255,.7))"/>`;
+  // points
+  vals.forEach((v,i)=>{
+    g+=`<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="#03060f" stroke="#22e6ff" stroke-width="2.5"/>`;
+    g+=`<text x="${x(i)}" y="${y(v)-12}" fill="#bff6ff" font-size="11" text-anchor="middle" font-weight="700">${v}%</text>`;
+  });
+  // 95% reference line
+  const yr=y(95);
+  g+=`<line x1="${padL}" y1="${yr}" x2="${W-padR}" y2="${yr}" stroke="rgba(40,255,176,.4)" stroke-width="1" stroke-dasharray="5 5"/>`;
+  g+=`<text x="${W-padR}" y="${yr-6}" fill="#28ffb0" font-size="10" text-anchor="end">目标 95%</text>`;
+  svg.innerHTML=g;
+})();
+
+/* ---- 仪表环 ---- */
+(function(){
+  const c=2*Math.PI*50; const fg=document.getElementById('ringfg');
+  const target=DATA.avg_rate; const off=c*(1-target/100);
+  document.getElementById('ringtxt').textContent='0%';
+  setTimeout(()=>{ fg.style.transition='stroke-dashoffset 1.4s ease'; fg.style.strokeDashoffset=off; },200);
+  const t0=performance.now();
+  (function st(t){const k=Math.min(1,(t-t0)/1400);
+    document.getElementById('ringtxt').textContent=(target*k).toFixed(1)+'%';
+    if(k<1) requestAnimationFrame(st);})(performance.now());
+})();
+
+/* ---- 订单明细 滚动 ---- */
+(function(){
+  const track=document.getElementById('track');
+  function rowHtml(d){
+    let st;
+    if(d.cls==='st-wait')      st=`<span class="st-ring st-wait-ring">待生产</span>`;
+    else if(d.cls==='st-prod') st=`<span class="st-ring st-prod-ring"><span class="big">生产中</span><span class="pc">${d.pct}%</span></span>`;
+    else                       st=`<span class="st-ring st-done-ring"><span class="big">已入库</span><span class="pc">${d.pct}%</span></span>`;
+    return `<div class="detail-row">
+      <div class="wo">${d.wo}</div><div>${d.kehu}</div><div>${d.prod}</div>
+      <div class="qty">${d.qty.toLocaleString()}</div><div>${d.lingliao}</div>
+      <div class="stcell">${st}</div></div>`;
+  }
+  // 双份拷贝实现无缝循环
+  const once=DATA.detail.map(rowHtml).join('');
+  track.innerHTML=once+once;
+  const rowH=track.querySelector('.detail-row').offsetHeight+1;
+  const n=DATA.detail.length;
+  const dur=n*2; // 每行滚动 2 秒
+  track.style.animation=`scrollUp ${dur}s linear infinite`;
+  const style=document.createElement('style');
+  style.textContent=`@keyframes scrollUp{from{transform:translateY(0)}to{transform:translateY(-${n*rowH}px)}}`;
+  document.head.appendChild(style);
+})();
+
+/* ---- 背景粒子网络 ---- */
+(function(){
+  const cv=document.getElementById('bgcanvas'), ctx=cv.getContext('2d');
+  let w,h,pts;
+  function resize(){w=cv.width=innerWidth; h=cv.height=innerHeight;
+    pts=Array.from({length:Math.min(70,Math.floor(w*h/26000))},()=>({
+      x:Math.random()*w,y:Math.random()*h,
+      vx:(Math.random()-.5)*.35,vy:(Math.random()-.5)*.35}));}
+  resize(); addEventListener('resize',resize);
+  function loop(t){
+    ctx.clearRect(0,0,w,h);
+    const pulse=.5+.5*Math.sin((t||0)/900);
+    for(const p of pts){
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0||p.x>w)p.vx*=-1; if(p.y<0||p.y>h)p.vy*=-1;
+      ctx.beginPath(); ctx.arc(p.x,p.y,1.8,0,7);
+      ctx.fillStyle='rgba(120,240,255,'+(.55+.45*pulse)+')';
+      ctx.shadowColor='rgba(34,230,255,.9)'; ctx.shadowBlur=10; ctx.fill();
+      ctx.shadowBlur=0;
+    }
+    for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+      const a=pts[i],b=pts[j],dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy);
+      if(d<150){ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+        ctx.strokeStyle='rgba(40,170,255,'+((1-d/150)*.26*(.6+.4*pulse))+')';
+        ctx.lineWidth=1; ctx.stroke();}
+    }
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+</script>
+</body>
+</html>
