@@ -302,7 +302,7 @@
 
   <section class="main">
     <div class="panel">
-      <h2><span class="bar"></span>交付率走势<span class="tag">本季度 · 按周</span></h2>
+      <h2><span class="bar"></span>准交率走势<span class="tag">本季度 · 按周</span></h2>
       <div class="chart-wrap"><svg id="chart" viewBox="0 0 600 320" preserveAspectRatio="none"></svg></div>
       <div class="gauge">
         <div class="ring">
@@ -312,7 +312,7 @@
             style="filter:drop-shadow(0 0 6px #28ffb0)"/></svg>
           <span id="ringtxt">0%</span>
         </div>
-        <div class="txt">本季度平均交付率<br><b id="avgrate">--%</b>　产能利用率 <b>96.4%</b><br>订单交付健康度：<b>优</b></div>
+        <div class="txt">本季度平均准交率<br><b id="avgrate">--%</b>　产能利用率 <b>96.4%</b><br>订单交付健康度：<b>优</b></div>
       </div>
     </div>
 
@@ -374,7 +374,7 @@ document.querySelectorAll('.num').forEach(el=>{
   countUp(el, map[key]||0);
 });
 const wkTotal=DATA.week_ruku+DATA.week_prod+DATA.week_pending;
-document.getElementById('wkrate').textContent='交付率 '+DATA.avg_rate+'%';
+document.getElementById('wkrate').textContent='准交率 '+DATA.avg_rate+'%';
 document.getElementById('avgrate').textContent=DATA.avg_rate+'%';
 
 /* ---- 准交率 SVG 走势图 ---- */
